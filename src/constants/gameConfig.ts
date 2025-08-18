@@ -1,0 +1,10 @@
+export const GAME_WIDTH = 960;
+export const GAME_HEIGHT = 540;
+export const PADDLE_WIDTH = 14;
+export const PADDLE_HEIGHT = 110;
+export const PADDLE_MARGIN = 24;
+export const BALL_RADIUS = 10;
+export const INITIAL_BALL_SPEED = 320;
+export const BALL_ACCELERATION = 1.03;
+export const DEFAULT_SMOOTHING = 0.65;
+export const DEFAULT_SENSITIVITY = 1.0;
