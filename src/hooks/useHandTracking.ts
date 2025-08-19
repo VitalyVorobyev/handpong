@@ -1,7 +1,24 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { type HandTrackingOptions, type MediaPipeResults } from '../types/tracking';
 import { loadScripts } from '../utils/loadScripts';
-import { clamp } from '../utils/mathUtils';
+
+interface MediaPipeHands {
+    setOptions: (options: Record<string, unknown>) => void;
+    onResults: (cb: (results: MediaPipeResults) => void) => void;
+    send: (data: { image: HTMLVideoElement }) => Promise<void>;
+}
+
+interface MediaPipeCamera {
+    start: () => Promise<void>;
+}
+
+interface MediaPipeWindow extends Window {
+    Hands: new (config: { locateFile: (f: string) => string }) => MediaPipeHands;
+    Camera: new (
+        video: HTMLVideoElement,
+        config: { onFrame: () => Promise<void>; width: number; height: number }
+    ) => MediaPipeCamera;
+}
 
 const useHandTracking = (options: HandTrackingOptions) => {
     const {
@@ -9,7 +26,6 @@ const useHandTracking = (options: HandTrackingOptions) => {
         showPreview = true,
         top = 0.05,
         bottom = 0.95,
-        minSpan = 0.08,
         onHandUpdate,
         onStatusChange,
         onFpsUpdate
@@ -21,11 +37,92 @@ const useHandTracking = (options: HandTrackingOptions) => {
     const [isRunning, setIsRunning] = useState(false);
     const lastYNormRef = useRef(0.5);
 
-    // Map normalized Y coordinate to game coordinate
-    const mapY = useCallback((yNorm: number) => {
-        const span = Math.max(minSpan, bottom - top);
-        return clamp((yNorm - top) / span, 0, 1);
-    }, [top, bottom, minSpan]);
+    // Keep latest control settings in refs for callbacks
+    const showPreviewRef = useRef(showPreview);
+    const topRef = useRef(top);
+    const bottomRef = useRef(bottom);
+
+    useEffect(() => { showPreviewRef.current = showPreview; }, [showPreview]);
+    useEffect(() => { topRef.current = top; }, [top]);
+    useEffect(() => { bottomRef.current = bottom; }, [bottom]);
+
+    // Draw debug visualization on canvas
+    const drawDebugVisualization = useCallback((results: MediaPipeResults) => {
+        const dbg = debugRef.current;
+        if (!dbg) return;
+
+        const dctx = dbg.getContext('2d')!;
+
+        // Resize debug canvas to element size
+        const rect = dbg.getBoundingClientRect();
+        if (dbg.width !== rect.width) {
+            dbg.width = rect.width;
+            dbg.height = rect.height;
+        }
+
+        dctx.clearRect(0, 0, dbg.width, dbg.height);
+
+        const show = showPreviewRef.current;
+        const topVal = topRef.current;
+        const bottomVal = bottomRef.current;
+
+        if (show && results.image) {
+            // Draw camera feed
+            dctx.drawImage(results.image, 0, 0, dbg.width, dbg.height);
+
+            // Draw control band
+            const tpx = topVal * dbg.height;
+            const bpx = bottomVal * dbg.height;
+
+            dctx.save();
+            dctx.fillStyle = 'rgba(255,255,255,0.08)';
+            dctx.fillRect(0, 0, dbg.width, tpx);
+            dctx.fillRect(0, bpx, dbg.width, dbg.height - bpx);
+
+            dctx.strokeStyle = '#6ea8fe';
+            dctx.setLineDash([6, 6]);
+            dctx.beginPath();
+            dctx.moveTo(0, tpx);
+            dctx.lineTo(dbg.width, tpx);
+            dctx.stroke();
+
+            dctx.beginPath();
+            dctx.moveTo(0, bpx);
+            dctx.lineTo(dbg.width, bpx);
+            dctx.stroke();
+            dctx.restore();
+        }
+
+        // Draw hand landmarks if present
+        const lms = results.multiHandLandmarks;
+        if (lms && lms.length > 0 && show) {
+            const lm = lms[0];
+
+            // Draw hand connections
+            dctx.fillStyle = '#00A0FF';
+            dctx.strokeStyle = '#FFFFFF';
+            dctx.lineWidth = 2;
+
+            // Draw each landmark
+            for (let i = 0; i < lm.length; i++) {
+                const point = lm[i];
+                const x = point.x * dbg.width;
+                const y = point.y * dbg.height;
+
+                dctx.beginPath();
+                dctx.arc(x, y, 3, 0, Math.PI * 2);
+                dctx.fill();
+            }
+
+            // Highlight index fingertip (landmark 8)
+            const tip = lm[8];
+            dctx.fillStyle = '#FF0000';
+            dctx.beginPath();
+            dctx.arc(tip.x * dbg.width, tip.y * dbg.height, 6, 0, Math.PI * 2);
+            dctx.fill();
+            dctx.stroke();
+        }
+    }, []);
 
     // Start camera and tracking
     const startCamera = useCallback(async () => {
@@ -64,7 +161,7 @@ const useHandTracking = (options: HandTrackingOptions) => {
             testStream.getTracks().forEach(t => t.stop());
 
             // Initialize MediaPipe Hands
-            const hands = new window.Hands({
+            const hands = new (window as MediaPipeWindow).Hands({
                 locateFile: (f: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`
             });
 
@@ -107,7 +204,7 @@ const useHandTracking = (options: HandTrackingOptions) => {
             });
 
             // Start camera
-            const camera = new window.Camera(videoRef.current!, {
+            const camera = new (window as MediaPipeWindow).Camera(videoRef.current!, {
                 onFrame: async () => {
                     await hands.send({ image: videoRef.current! });
                 },
@@ -120,84 +217,11 @@ const useHandTracking = (options: HandTrackingOptions) => {
             setIsRunning(true);
         } catch (e: unknown) {
             console.error(e);
-            onStatusChange(`Camera blocked — ${e instanceof Error ? e.name : 'Error'}`);
+            const err = e as { name?: string };
+            onStatusChange(`Camera blocked — ${err?.name || 'Error'}`);
             throw e;
         }
-    }, [isRunning, onHandUpdate, onStatusChange, onFpsUpdate, top, bottom, mapY]);
-
-    // Draw debug visualization on canvas
-    const drawDebugVisualization = useCallback((results: MediaPipeResults) => {
-        const dbg = debugRef.current;
-        if (!dbg) return;
-
-        const dctx = dbg.getContext('2d')!;
-
-        // Resize debug canvas to element size
-        const rect = dbg.getBoundingClientRect();
-        if (dbg.width !== rect.width) {
-            dbg.width = rect.width;
-            dbg.height = rect.height;
-        }
-
-        dctx.clearRect(0, 0, dbg.width, dbg.height);
-
-        if (showPreview && results.image) {
-            // Draw camera feed
-            dctx.drawImage(results.image, 0, 0, dbg.width, dbg.height);
-
-            // Draw control band
-            const tpx = top * dbg.height;
-            const bpx = bottom * dbg.height;
-
-            dctx.save();
-            dctx.fillStyle = 'rgba(255,255,255,0.08)';
-            dctx.fillRect(0, 0, dbg.width, tpx);
-            dctx.fillRect(0, bpx, dbg.width, dbg.height - bpx);
-
-            dctx.strokeStyle = '#6ea8fe';
-            dctx.setLineDash([6, 6]);
-            dctx.beginPath();
-            dctx.moveTo(0, tpx);
-            dctx.lineTo(dbg.width, tpx);
-            dctx.stroke();
-
-            dctx.beginPath();
-            dctx.moveTo(0, bpx);
-            dctx.lineTo(dbg.width, bpx);
-            dctx.stroke();
-            dctx.restore();
-        }
-
-        // Draw hand landmarks if present
-        const lms = results.multiHandLandmarks;
-        if (lms && lms.length > 0 && showPreview) {
-            const lm = lms[0];
-
-            // Draw hand connections
-            dctx.fillStyle = '#00A0FF';
-            dctx.strokeStyle = '#FFFFFF';
-            dctx.lineWidth = 2;
-
-            // Draw each landmark
-            for (let i = 0; i < lm.length; i++) {
-                const point = lm[i];
-                const x = point.x * dbg.width;
-                const y = point.y * dbg.height;
-
-                dctx.beginPath();
-                dctx.arc(x, y, 3, 0, Math.PI * 2);
-                dctx.fill();
-            }
-
-            // Highlight index fingertip (landmark 8)
-            const tip = lm[8];
-            dctx.fillStyle = '#FF0000';
-            dctx.beginPath();
-            dctx.arc(tip.x * dbg.width, tip.y * dbg.height, 6, 0, Math.PI * 2);
-            dctx.fill();
-            dctx.stroke();
-        }
-    }, [showPreview, top, bottom]);
+    }, [isRunning, onHandUpdate, onStatusChange, onFpsUpdate, drawDebugVisualization]);
 
     // Apply mirror transform when needed
     useEffect(() => {
