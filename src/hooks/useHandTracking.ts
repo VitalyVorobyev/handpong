@@ -64,7 +64,7 @@ const useHandTracking = (options: HandTrackingOptions) => {
             testStream.getTracks().forEach(t => t.stop());
 
             // Initialize MediaPipe Hands
-            const hands = new (window as any).Hands({
+            const hands = new window.Hands({
                 locateFile: (f: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`
             });
 
@@ -107,7 +107,7 @@ const useHandTracking = (options: HandTrackingOptions) => {
             });
 
             // Start camera
-            const camera = new (window as any).Camera(videoRef.current!, {
+            const camera = new window.Camera(videoRef.current!, {
                 onFrame: async () => {
                     await hands.send({ image: videoRef.current! });
                 },
@@ -118,9 +118,9 @@ const useHandTracking = (options: HandTrackingOptions) => {
             await camera.start();
             onStatusChange('Camera running');
             setIsRunning(true);
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
-            onStatusChange(`Camera blocked — ${e?.name || 'Error'}`);
+            onStatusChange(`Camera blocked — ${e instanceof Error ? e.name : 'Error'}`);
             throw e;
         }
     }, [isRunning, onHandUpdate, onStatusChange, onFpsUpdate, top, bottom, mapY]);
