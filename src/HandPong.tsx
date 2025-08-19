@@ -13,7 +13,7 @@ import { clamp } from './utils/mathUtils';
 
 const HandPong = () => {
     // Game and UI state
-    const [running, setRunning] = useState(true);
+    const [running, setRunning] = useState(false);
     const [status, setStatus] = useState('Idle');
     const [mouseMode, setMouseMode] = useState(false);
     const [showPreview, setShowPreview] = useState(true);
@@ -22,6 +22,7 @@ const HandPong = () => {
     const [sensitivity, setSensitivity] = useState(1.0);
     const [handsFPS, setHandsFPS] = useState(0);
     const [handSeen, setHandSeen] = useState(false);
+    const [cameraRunning, setCameraRunning] = useState(false);
 
     // Canvas ref
     const canvasRef = useRef<HTMLCanvasElement>(null!) as React.RefObject<HTMLCanvasElement>;
@@ -54,7 +55,9 @@ const HandPong = () => {
 
     // Now we can use the tracking hook with the defined handlers
     type StartCameraFn = () => Promise<void>;
+    type StopCameraFn = () => void;
     const startCameraRef = useRef<StartCameraFn | null>(null);
+    const stopCameraRef = useRef<StopCameraFn | null>(null);
 
     // Safely set top limit
     const setTopSafe = (v: number) => {
@@ -75,6 +78,8 @@ const HandPong = () => {
         try {
             if (startCameraRef.current) {
                 await startCameraRef.current();
+                setCameraRunning(true);
+                setMouseMode(false);
             } else {
                 throw new Error("Camera not initialized");
             }
@@ -82,6 +87,14 @@ const HandPong = () => {
             console.error("Camera error:", e);
             setMouseMode(true);
         }
+    };
+
+    const handleStopCamera = () => {
+        if (stopCameraRef.current) {
+            stopCameraRef.current();
+        }
+        setCameraRunning(false);
+        setMouseMode(true);
     };
 
     // Game update loop
@@ -128,6 +141,8 @@ const HandPong = () => {
 
                 <Toolbar
                     startCamera={handleStartCamera}
+                    stopCamera={handleStopCamera}
+                    cameraRunning={cameraRunning}
                     mouseMode={mouseMode}
                     setMouseMode={setMouseMode}
                     running={running}
@@ -163,6 +178,7 @@ const HandPong = () => {
                     top={top}
                     bottom={bottom}
                     startCameraRef={startCameraRef}
+                    stopCameraRef={stopCameraRef}
                 />
             </ControlPanel>
         </main>

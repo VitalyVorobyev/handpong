@@ -9,6 +9,7 @@ interface HandTrackerProps {
     top: number;
     bottom: number;
     startCameraRef?: React.RefObject<(() => Promise<void>) | null>;
+    stopCameraRef?: React.RefObject<(() => void) | null>;
 };
 
 const HandTracker = ({
@@ -19,9 +20,10 @@ const HandTracker = ({
     showPreview,
     top,
     bottom,
-    startCameraRef
+    startCameraRef,
+    stopCameraRef
 }: HandTrackerProps) => {
-    const { videoRef, debugRef, startCamera } = useHandTracking({
+    const { videoRef, debugRef, startCamera, stopCamera } = useHandTracking({
         mirror,
         showPreview,
         top,
@@ -33,6 +35,10 @@ const HandTracker = ({
 
     if (startCameraRef) {
         startCameraRef.current = startCamera;
+    };
+
+    if (stopCameraRef) {
+        stopCameraRef.current = stopCamera;
     };
 
     return (
