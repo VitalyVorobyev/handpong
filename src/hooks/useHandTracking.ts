@@ -10,6 +10,7 @@ interface MediaPipeHands {
 
 interface MediaPipeCamera {
     start: () => Promise<void>;
+    stop: () => void;
 }
 
 interface MediaPipeWindow extends Window {
@@ -36,15 +37,19 @@ const useHandTracking = (options: HandTrackingOptions) => {
     const [handSeen, setHandSeen] = useState(false);
     const [isRunning, setIsRunning] = useState(false);
     const lastYNormRef = useRef(0.5);
+    const cameraRef = useRef<MediaPipeCamera | null>(null);
+    const streamRef = useRef<MediaStream | null>(null);
 
     // Keep latest control settings in refs for callbacks
     const showPreviewRef = useRef(showPreview);
     const topRef = useRef(top);
     const bottomRef = useRef(bottom);
+    const onHandUpdateRef = useRef(onHandUpdate);
 
     useEffect(() => { showPreviewRef.current = showPreview; }, [showPreview]);
     useEffect(() => { topRef.current = top; }, [top]);
     useEffect(() => { bottomRef.current = bottom; }, [bottom]);
+    useEffect(() => { onHandUpdateRef.current = onHandUpdate; }, [onHandUpdate]);
 
     // Draw debug visualization on canvas
     const drawDebugVisualization = useCallback((results: MediaPipeResults) => {
@@ -195,11 +200,11 @@ const useHandTracking = (options: HandTrackingOptions) => {
                     lastYNormRef.current = yNorm;
 
                     // Update hand position
-                    onHandUpdate(yNorm, true);
+                    onHandUpdateRef.current(yNorm, true);
                     setHandSeen(true);
                 } else {
                     setHandSeen(false);
-                    onHandUpdate(lastYNormRef.current, false);
+                    onHandUpdateRef.current(lastYNormRef.current, false);
                 }
             });
 
@@ -211,8 +216,10 @@ const useHandTracking = (options: HandTrackingOptions) => {
                 width: 640,
                 height: 480
             });
+            cameraRef.current = camera;
 
             await camera.start();
+            streamRef.current = videoRef.current?.srcObject as MediaStream | null;
             onStatusChange('Camera running');
             setIsRunning(true);
         } catch (e: unknown) {
@@ -221,7 +228,26 @@ const useHandTracking = (options: HandTrackingOptions) => {
             onStatusChange(`Camera blocked — ${err?.name || 'Error'}`);
             throw e;
         }
-    }, [isRunning, onHandUpdate, onStatusChange, onFpsUpdate, drawDebugVisualization]);
+    }, [isRunning, onStatusChange, onFpsUpdate, drawDebugVisualization]);
+
+    // Stop camera and tracking
+    const stopCamera = useCallback(() => {
+        if (!isRunning) return;
+
+        cameraRef.current?.stop();
+        streamRef.current?.getTracks().forEach(t => t.stop());
+        if (videoRef.current) videoRef.current.srcObject = null;
+
+        const dbg = debugRef.current;
+        if (dbg) {
+            const dctx = dbg.getContext('2d');
+            dctx?.clearRect(0, 0, dbg.width, dbg.height);
+        }
+
+        setIsRunning(false);
+        setHandSeen(false);
+        onStatusChange('Camera stopped');
+    }, [isRunning, onStatusChange]);
 
     // Apply mirror transform when needed
     useEffect(() => {
@@ -252,6 +278,7 @@ const useHandTracking = (options: HandTrackingOptions) => {
         handSeen,
         isRunning,
         startCamera,
+        stopCamera,
         lastYNormRef
     };
 };
