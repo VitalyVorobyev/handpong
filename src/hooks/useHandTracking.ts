@@ -44,10 +44,12 @@ const useHandTracking = (options: HandTrackingOptions) => {
     const showPreviewRef = useRef(showPreview);
     const topRef = useRef(top);
     const bottomRef = useRef(bottom);
+    const onHandUpdateRef = useRef(onHandUpdate);
 
     useEffect(() => { showPreviewRef.current = showPreview; }, [showPreview]);
     useEffect(() => { topRef.current = top; }, [top]);
     useEffect(() => { bottomRef.current = bottom; }, [bottom]);
+    useEffect(() => { onHandUpdateRef.current = onHandUpdate; }, [onHandUpdate]);
 
     // Draw debug visualization on canvas
     const drawDebugVisualization = useCallback((results: MediaPipeResults) => {
@@ -198,11 +200,11 @@ const useHandTracking = (options: HandTrackingOptions) => {
                     lastYNormRef.current = yNorm;
 
                     // Update hand position
-                    onHandUpdate(yNorm, true);
+                    onHandUpdateRef.current(yNorm, true);
                     setHandSeen(true);
                 } else {
                     setHandSeen(false);
-                    onHandUpdate(lastYNormRef.current, false);
+                    onHandUpdateRef.current(lastYNormRef.current, false);
                 }
             });
 
@@ -226,7 +228,7 @@ const useHandTracking = (options: HandTrackingOptions) => {
             onStatusChange(`Camera blocked — ${err?.name || 'Error'}`);
             throw e;
         }
-    }, [isRunning, onHandUpdate, onStatusChange, onFpsUpdate, drawDebugVisualization]);
+    }, [isRunning, onStatusChange, onFpsUpdate, drawDebugVisualization]);
 
     // Stop camera and tracking
     const stopCamera = useCallback(() => {
