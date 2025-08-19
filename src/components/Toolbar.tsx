@@ -1,5 +1,7 @@
 interface ToolbarProps {
     startCamera: () => void;
+    stopCamera: () => void;
+    cameraRunning: boolean;
     mouseMode: boolean;
     setMouseMode: (mode: boolean) => void;
     running: boolean;
@@ -10,6 +12,8 @@ interface ToolbarProps {
 
 const Toolbar = ({
   startCamera,
+  stopCamera,
+  cameraRunning,
   mouseMode,
   setMouseMode,
   running,
@@ -21,6 +25,10 @@ const Toolbar = ({
         <div className="toolbar" style={{ marginTop: 12 }}>
             <button className="btn" onClick={startCamera}>
                 🎥 Start Camera
+            </button>
+
+            <button className="btn" onClick={stopCamera} disabled={!cameraRunning}>
+                🛑 Stop Camera
             </button>
 
             <button
