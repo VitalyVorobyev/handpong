@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
 import { GAME_WIDTH, GAME_HEIGHT, PADDLE_WIDTH, PADDLE_HEIGHT, PADDLE_MARGIN } from '../constants/gameConfig';
+import { type GameState } from '../types/game';
 
 interface GameCanvasProps {
-    gameState: React.RefObject<any>;
+    gameState: React.RefObject<GameState>;
     running: boolean;
     handSeen: boolean;
     mouseMode: boolean;

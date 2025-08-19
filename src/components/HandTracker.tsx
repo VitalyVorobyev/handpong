@@ -8,7 +8,6 @@ interface HandTrackerProps {
     showPreview: boolean;
     top: number;
     bottom: number;
-    minSpan?: number;
     startCameraRef?: React.RefObject<(() => Promise<void>) | null>;
 };
 
@@ -20,7 +19,6 @@ const HandTracker = ({
     showPreview,
     top,
     bottom,
-    minSpan = 0.08,
     startCameraRef
 }: HandTrackerProps) => {
     const { videoRef, debugRef, startCamera } = useHandTracking({
@@ -28,7 +26,6 @@ const HandTracker = ({
         showPreview,
         top,
         bottom,
-        minSpan,
         onHandUpdate,
         onStatusChange,
         onFpsUpdate
