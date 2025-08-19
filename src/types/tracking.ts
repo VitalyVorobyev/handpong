@@ -9,7 +9,6 @@ export interface HandTrackingOptions {
     showPreview: boolean;
     top: number;
     bottom: number;
-    minSpan: number;
     onHandUpdate: (yNorm: number, handSeen: boolean) => void;
     onStatusChange: (status: string) => void;
     onFpsUpdate: (fps: number) => void;
