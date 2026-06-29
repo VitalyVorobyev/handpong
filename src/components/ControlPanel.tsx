@@ -19,144 +19,94 @@ interface ControlPanelProps {
     children?: React.ReactNode;
 };
 
-interface OverlayControlProps {
-    showPreview: boolean;
-    setShowPreview: (show: boolean) => void;
-};
-
-const OverlayControl = ({ showPreview, setShowPreview }: OverlayControlProps) => {
-    return (
-        <div className="row" style={{ marginTop: 8 }}>
-            <label>
-                <input
-                    type="checkbox"
-                    checked={showPreview}
-                    onChange={e => setShowPreview(e.target.checked)}
-                />
-                Show preview/overlay
-            </label>
-        </div>
-    );
-};
-
-const MirrorControl = ({ mirror, setMirror }: { mirror: boolean; setMirror: (mirror: boolean) => void }) => {
-    return (
-        <div className="row">
-            <label>
-                <input
-                    type="checkbox"
-                    checked={mirror}
-                    onChange={e => setMirror(e.target.checked)}
-                />
-                Mirror controls
-            </label>
-        </div>
-    );
-};
-
-const SmoothingControl = ({ alpha, setAlpha }: { alpha: number; setAlpha: (alpha: number) => void }) => {
-    return (
-        <div className="row">
-            <label>
-                Smoothing
-            </label>
-            <input
-                type="range"
-                min={0}
-                max={0.9}
-                step={0.05}
-                value={alpha}
-                onChange={e => setAlpha(parseFloat(e.target.value))}
-            />
-            <span className="badge">{alpha.toFixed(2)}</span>
-        </div>
-    );
-};
-
-const SensitivityControls = ({ sensitivity, setSensitivity }: { sensitivity: number; setSensitivity: (sensitivity: number) => void }) => {
-    return (
-        <div className="row">
-            <label>
-                Sensitivity
-            </label>
-            <input
-                type="range"
-                min={0.5}
-                max={2.0}
-                step={0.05}
-                value={sensitivity}
-                onChange={e => setSensitivity(parseFloat(e.target.value))}
-            />
-            <span className="badge">{sensitivity.toFixed(2)}×</span>
-        </div>
-    );
-};
-
-const TopLimitControls = ({ top, setTop, lastYNormRef }: { top: number; setTop: (top: number) => void; lastYNormRef: React.RefObject<number>; }) => {
-    return (
-        <div className="row">
-            <label>
-                Top limit
-            </label>
-            <input
-                type="range"
-                min={0}
-                max={0.5}
-                step={0.01}
-                value={top}
-                onChange={e => setTop(parseFloat(e.target.value))}
-            />
-            <span className="badge">{Math.round(top * 100)}%</span>
-            <button
-                className="btn"
-                onClick={() => setTop(lastYNormRef.current!)}
-            >
-                Set top
-            </button>
-        </div>
-    );
-};
-
-const BottomLimitControls = ({ bottom, setBottom, lastYNormRef }: { bottom: number; setBottom: (bottom: number) => void; lastYNormRef: React.RefObject<number>; }) => {
-    return (
-        <div className="row">
-            <label>
-                Bottom limit
-            </label>
-            <input
-                type="range"
-                min={0.5}
-                max={1.0}
-                step={0.01}
-                value={bottom}
-                onChange={e => setBottom(parseFloat(e.target.value))}
-            />
-            <span className="badge">{Math.round(bottom * 100)}%</span>
-            <button
-                className="btn"
-                onClick={() => setBottom(lastYNormRef.current!)}
-            >
-                Set bottom
-            </button>
-        </div>
-    );
-};
-
-const ControlsStatus = ({
-    handSeen,
-    handsFPS
+const ToggleControl = ({
+    label,
+    checked,
+    onChange,
 }: {
-    handSeen: boolean;
-    handsFPS: number;
+    label: string;
+    checked: boolean;
+    onChange: (value: boolean) => void;
 }) => {
     return (
-        <div className="kv">
-            <div>Tracking:</div>
-            <div className="badge">{handSeen ? 'hand' : 'no hand'}</div>
-            <div>FPS (hands):</div>
-            <div className="badge">{handsFPS}</div>
-            <div>Controls:</div>
-            <div className="badge">Hand (cam) / Mouse / ↑↓</div>
+        <div className="field field--check">
+            <label className="field__label">
+                <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={e => onChange(e.target.checked)}
+                />
+                {label}
+            </label>
+        </div>
+    );
+};
+
+const SliderControl = ({
+    label,
+    min,
+    max,
+    step,
+    value,
+    format,
+    onChange,
+}: {
+    label: string;
+    min: number;
+    max: number;
+    step: number;
+    value: number;
+    format: (value: number) => string;
+    onChange: (value: number) => void;
+}) => {
+    return (
+        <div className="field">
+            <span className="field__label">{label}</span>
+            <input
+                className="slider"
+                type="range"
+                min={min}
+                max={max}
+                step={step}
+                value={value}
+                onChange={e => onChange(parseFloat(e.target.value))}
+            />
+            <span className="badge">{format(value)}</span>
+        </div>
+    );
+};
+
+const LimitControl = ({
+    label,
+    min,
+    max,
+    value,
+    setValue,
+    lastYNormRef,
+}: {
+    label: string;
+    min: number;
+    max: number;
+    value: number;
+    setValue: (value: number) => void;
+    lastYNormRef: React.RefObject<number>;
+}) => {
+    return (
+        <div className="field">
+            <span className="field__label">{label}</span>
+            <input
+                className="slider"
+                type="range"
+                min={min}
+                max={max}
+                step={0.01}
+                value={value}
+                onChange={e => setValue(parseFloat(e.target.value))}
+            />
+            <span className="badge">{Math.round(value * 100)}%</span>
+            <button className="set-btn" onClick={() => setValue(lastYNormRef.current!)}>
+                Set
+            </button>
         </div>
     );
 };
@@ -174,24 +124,67 @@ const ControlPanel = ({
     children
 }: ControlPanelProps) => {
     return (
-        <aside className="aside">
-            <h2>
-                Webcam & Tracking
-            </h2>
-            {children}
+        <aside className="panel">
+            <div className="panel__section">
+                <h2 className="panel__title">Webcam</h2>
+                {children}
+                <ToggleControl label="Show preview & overlay" checked={showPreview} onChange={setShowPreview} />
+                <ToggleControl label="Mirror controls" checked={mirror} onChange={setMirror} />
+            </div>
 
-            <OverlayControl showPreview={showPreview} setShowPreview={setShowPreview} />
-            <MirrorControl mirror={mirror} setMirror={setMirror} />
-            <SmoothingControl alpha={alpha} setAlpha={setAlpha} />
-            <SensitivityControls sensitivity={sensitivity} setSensitivity={setSensitivity} />
-            <TopLimitControls top={top} setTop={setTop} lastYNormRef={lastYNormRef} />
-            <BottomLimitControls bottom={bottom} setBottom={setBottom} lastYNormRef={lastYNormRef} />
+            <div className="panel__section">
+                <h2 className="panel__title">Feel</h2>
+                <SliderControl
+                    label="Smoothing"
+                    min={0} max={0.9} step={0.05}
+                    value={alpha}
+                    format={v => v.toFixed(2)}
+                    onChange={setAlpha}
+                />
+                <SliderControl
+                    label="Sensitivity"
+                    min={0.5} max={2.0} step={0.05}
+                    value={sensitivity}
+                    format={v => `${v.toFixed(2)}×`}
+                    onChange={setSensitivity}
+                />
+            </div>
 
-            <ControlsStatus handSeen={handSeen} handsFPS={handsFPS} />
+            <div className="panel__section">
+                <h2 className="panel__title">Control band</h2>
+                <LimitControl
+                    label="Top limit"
+                    min={0} max={0.5}
+                    value={top} setValue={setTop}
+                    lastYNormRef={lastYNormRef}
+                />
+                <LimitControl
+                    label="Bottom limit"
+                    min={0.5} max={1.0}
+                    value={bottom} setValue={setBottom}
+                    lastYNormRef={lastYNormRef}
+                />
+                <p className="hint">
+                    <b>Set</b> snaps a limit to your hand's current height — raise your hand to the
+                    top of your comfortable reach, click Set on Top limit, then repeat for Bottom.
+                </p>
+            </div>
 
-            <p className="hint">
-                If camera is blocked, toggle <b>Mouse Mode</b> and allow access.
-            </p>
+            <div className="panel__section">
+                <h2 className="panel__title">Status</h2>
+                <div className="kv">
+                    <div>Tracking</div>
+                    <div className="badge">{handSeen ? 'hand' : 'no hand'}</div>
+                    <div>Hand FPS</div>
+                    <div className="badge">{handsFPS}</div>
+                    <div>Controls</div>
+                    <div className="badge">Cam / Mouse / ↑↓</div>
+                </div>
+                <p className="hint">
+                    If the camera is blocked, switch on <b>Mouse mode</b> and allow access in your
+                    browser's address bar.
+                </p>
+            </div>
         </aside>
     );
 };

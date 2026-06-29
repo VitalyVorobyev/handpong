@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>HandPong</title>
+        <meta
+            name="description"
+            content="Classic Pong controlled by your hand — real-time webcam hand tracking with MediaPipe, built in React + TypeScript + Vite."
+        />
+        <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+        <style>
+            :root {
+                color-scheme: dark;
+                --bg: #060a14;
+                --blue: #5b9dff;
+                --violet: #b721ff;
+                --amber: #f2a93d;
+                --teal: #33c6e3;
+                --green: #3ddc84;
+                --ink: #d8e3f2;
+                --muted: #8294b0;
+                --card: #0b1426;
+                --edge: #1b2740;
+            }
+            * {
+                box-sizing: border-box;
+            }
+            html,
+            body {
+                margin: 0;
+                min-height: 100%;
+            }
+            body {
+                background:
+                    radial-gradient(
+                        1100px 700px at 14% -10%,
+                        rgba(91, 157, 255, 0.16),
+                        transparent 60%
+                    ),
+                    radial-gradient(
+                        1000px 720px at 102% 112%,
+                        rgba(242, 169, 61, 0.1),
+                        transparent 60%
+                    ),
+                    var(--bg);
+                color: var(--ink);
+                font:
+                    16px/1.6 ui-sans-serif,
+                    system-ui,
+                    -apple-system,
+                    "Segoe UI",
+                    Roboto,
+                    sans-serif;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 6vh 24px;
+            }
+            main {
+                width: 100%;
+                max-width: 880px;
+            }
+            .brand {
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                margin: 0 0 18px;
+            }
+            .brand img {
+                width: 46px;
+                height: 46px;
+                border-radius: 11px;
+            }
+            .tag {
+                letter-spacing: 0.28em;
+                text-transform: uppercase;
+                font-size: 12px;
+                color: var(--muted);
+                margin: 0;
+            }
+            h1 {
+                margin: 0 0 14px;
+                font-size: clamp(38px, 8.4vw, 70px);
+                font-weight: 700;
+                line-height: 1.02;
+                letter-spacing: -0.01em;
+                background: linear-gradient(
+                    96deg,
+                    var(--blue),
+                    #eef4fb 54%,
+                    var(--amber)
+                );
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+            }
+            .lede {
+                margin: 0 0 38px;
+                max-width: 62ch;
+                color: var(--ink);
+            }
+            .lede b {
+                color: #eef4fb;
+                font-weight: 600;
+            }
+            .grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+                gap: 16px;
+            }
+            a.card {
+                display: block;
+                padding: 22px;
+                border: 1px solid var(--edge);
+                border-radius: 14px;
+                background: linear-gradient(180deg, var(--card), #070d18);
+                text-decoration: none;
+                color: var(--ink);
+                transition:
+                    transform 0.15s ease,
+                    border-color 0.15s ease,
+                    box-shadow 0.15s ease;
+            }
+            a.card:hover {
+                transform: translateY(-3px);
+                border-color: rgba(91, 157, 255, 0.5);
+                box-shadow: 0 12px 42px rgba(91, 157, 255, 0.13);
+            }
+            a.card .h {
+                font-size: 19px;
+                font-weight: 650;
+                margin: 0 0 6px;
+            }
+            a.card.play .h {
+                color: var(--amber);
+            }
+            a.card.guide .h {
+                color: var(--blue);
+            }
+            a.card.tech .h {
+                color: var(--teal);
+            }
+            a.card.source .h {
+                color: var(--green);
+            }
+            a.card p {
+                margin: 0;
+                font-size: 14px;
+                color: var(--muted);
+            }
+            a.card code {
+                color: #c6d4e8;
+                font-size: 0.9em;
+            }
+            footer {
+                margin-top: 40px;
+                padding-top: 18px;
+                border-top: 1px solid var(--edge);
+                font-size: 13px;
+                color: var(--muted);
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px 18px;
+            }
+            footer a {
+                color: var(--blue);
+                text-decoration: none;
+            }
+            footer a:hover {
+                text-decoration: underline;
+            }
+        </style>
+    </head>
+    <body>
+        <main>
+            <div class="brand">
+                <img src="./icon.svg" alt="HandPong" />
+                <p class="tag">React · TypeScript · MediaPipe</p>
+            </div>
+            <h1>HandPong</h1>
+            <p class="lede">
+                <b>Classic Pong, controlled by your hand.</b>
+                Real-time webcam hand tracking with
+                <b>MediaPipe Hands</b> maps your index fingertip to the paddle —
+                no controller, no keyboard required. Move your hand up and down to
+                defend your side and beat the built-in AI. Mouse and keyboard
+                fallbacks are built in for when the camera is unavailable.
+            </p>
+            <nav class="grid">
+                <a class="card play" href="https://vitalyvorobyev.github.io/handpong/">
+                    <p class="h">Play</p>
+                    <p>
+                        Launch the live game in your browser. Allow camera
+                        access, then move your hand to control the paddle.
+                    </p>
+                </a>
+                <a class="card guide" href="https://github.com/VitalyVorobyev/handpong#how-to-play">
+                    <p class="h">How to play</p>
+                    <p>
+                        Calibrate your control band, tune smoothing and
+                        sensitivity, and switch input modes on the fly.
+                    </p>
+                </a>
+                <a class="card tech" href="https://developers.google.com/mediapipe/solutions/vision/hand_landmarker">
+                    <p class="h">How it works</p>
+                    <p>
+                        The pipeline: webcam frames →
+                        <code>MediaPipe Hands</code> landmarks → smoothed paddle
+                        target → canvas physics loop.
+                    </p>
+                </a>
+                <a class="card source" href="https://github.com/VitalyVorobyev/handpong">
+                    <p class="h">Source</p>
+                    <p>
+                        MIT-licensed on GitHub. React + Vite single-page app,
+                        deployed to GitHub Pages from <code>main</code>.
+                    </p>
+                </a>
+            </nav>
+            <footer>
+                <span
+                    >Source on
+                    <a href="https://github.com/VitalyVorobyev/handpong"
+                        >GitHub</a
+                    ></span
+                >
+                <span>·</span>
+                <span><a href="https://vitavision.dev/">vitavision.dev</a></span>
+            </footer>
+        </main>
+    </body>
+</html>
