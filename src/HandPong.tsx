@@ -4,6 +4,7 @@ import GameCanvas from './components/GameCanvas';
 import HandTracker from './components/HandTracker';
 import ControlPanel from './components/ControlPanel';
 import Toolbar from './components/Toolbar';
+import HowToPlay from './components/HowToPlay';
 import useGameLogic from './hooks/useGameLogic';
 import useKeyboardControls from './hooks/useKeyboardControls';
 import useMouseControls from './hooks/useMouseControls';
@@ -23,6 +24,7 @@ const HandPong = () => {
     const [handsFPS, setHandsFPS] = useState(0);
     const [handSeen, setHandSeen] = useState(false);
     const [cameraRunning, setCameraRunning] = useState(false);
+    const [showHowTo, setShowHowTo] = useState(true);
 
     // Canvas ref
     const canvasRef = useRef<HTMLCanvasElement>(null!) as React.RefObject<HTMLCanvasElement>;
@@ -97,6 +99,19 @@ const HandPong = () => {
         setMouseMode(true);
     };
 
+    // First-run overlay actions
+    const startWithCamera = async () => {
+        setShowHowTo(false);
+        await handleStartCamera();
+        setRunning(true);
+    };
+
+    const startWithMouse = () => {
+        setShowHowTo(false);
+        setMouseMode(true);
+        setRunning(true);
+    };
+
     // Game update loop
     useEffect(() => {
         let lastTime = performance.now();
@@ -129,15 +144,25 @@ const HandPong = () => {
     }, mouseMode);
 
     return (
-        <main>
+        <main className="layout">
             <section className="stage">
-                <GameCanvas
-                    gameState={gameState}
-                    running={running}
-                    handSeen={handSeen}
-                    mouseMode={mouseMode}
-                    canvasRef={canvasRef} // Pass the ref to GameCanvas
-                />
+                <div className="stage__screen">
+                    <GameCanvas
+                        gameState={gameState}
+                        running={running}
+                        handSeen={handSeen}
+                        mouseMode={mouseMode}
+                        canvasRef={canvasRef} // Pass the ref to GameCanvas
+                    />
+                </div>
+
+                {showHowTo && (
+                    <HowToPlay
+                        onStartCamera={startWithCamera}
+                        onUseMouse={startWithMouse}
+                        onClose={() => setShowHowTo(false)}
+                    />
+                )}
 
                 <Toolbar
                     startCamera={handleStartCamera}
@@ -149,6 +174,7 @@ const HandPong = () => {
                     setRunning={setRunning}
                     resetGame={resetGame}
                     status={status}
+                    onHowTo={() => setShowHowTo(true)}
                 />
             </section>
 
