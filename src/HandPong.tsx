@@ -99,7 +99,21 @@ const HandPong = () => {
         setMouseMode(true);
     };
 
-    // First-run overlay actions
+    // Help/first-run overlay. Opening it pauses the match (the overlay covers
+    // the canvas), and closing restores whatever was running before.
+    const wasRunningRef = useRef(false);
+
+    const openHowTo = () => {
+        wasRunningRef.current = running;
+        setRunning(false);
+        setShowHowTo(true);
+    };
+
+    const closeHowTo = () => {
+        setShowHowTo(false);
+        setRunning(wasRunningRef.current);
+    };
+
     const startWithCamera = async () => {
         setShowHowTo(false);
         await handleStartCamera();
@@ -160,7 +174,7 @@ const HandPong = () => {
                     <HowToPlay
                         onStartCamera={startWithCamera}
                         onUseMouse={startWithMouse}
-                        onClose={() => setShowHowTo(false)}
+                        onClose={closeHowTo}
                     />
                 )}
 
@@ -174,7 +188,7 @@ const HandPong = () => {
                     setRunning={setRunning}
                     resetGame={resetGame}
                     status={status}
-                    onHowTo={() => setShowHowTo(true)}
+                    onHowTo={openHowTo}
                 />
             </section>
 
